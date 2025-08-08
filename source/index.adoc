@@ -1,0 +1,6 @@
+= サンプルドキュメント
+:doctype: article
+:toc: left
+:toclevels: 2
+
+include::_partial/intro.adoc[]
