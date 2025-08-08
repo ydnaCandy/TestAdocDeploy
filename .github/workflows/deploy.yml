@@ -2,31 +2,40 @@ name: Build and Deploy AsciiDoc
 
 on:
   push:
-    branches: [main]
+    # 起動ブランチ
+    branches: [main]  
 
 jobs:
   build-and-deploy:
+    # 実行環境として最新のUbuntuを使用
     runs-on: ubuntu-latest
 
     steps:
+      # リポジトリのコードをチェックアウト
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Asciidoctorを実行するRubyのセットアップ
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 3.1
+          ruby-version: 3.1  # Rubyのバージョンを指定
 
+      # Asciidoctorのインストール
       - name: Install Asciidoctor
         run: gem install asciidoctor
 
+      # AsciidocファイルをHTMLに変換
       - name: Build AsciiDoc (resolve includes)
         run: |
-          mkdir -p build
-          asciidoctor -D build source/index.adoc
+          mkdir -p build                   # 出力用ディレクトリを作成
+          asciidoctor -D build source/index.adoc  # source/index.adoc を build/ に変換
 
+      # GitHub Pagesへデプロイ（gh-pagesブランチにHTMLをpush）
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
+          # GitHubが自動で用意する認証トークン
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          # 公開するディレクトリ（HTML出力先）
           publish_dir: ./build

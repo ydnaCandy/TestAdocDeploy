@@ -10,3 +10,10 @@
     - Source	Deploy from a branch
     - Branch	gh-pages
     - Folder	/（root）
+
+- リポジトリの Actions 権限を変更
+    - GitHub でリポジトリを開く
+    - Settings → Actions → General
+    - "Workflow permissions" までスクロール
+        - Read and write permissions を選択
+        - 「Allow GitHub Actions to create and approve pull requests」も有効にすると安心
