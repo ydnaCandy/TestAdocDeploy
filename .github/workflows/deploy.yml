@@ -25,11 +25,12 @@ jobs:
       - name: Install Asciidoctor
         run: gem install asciidoctor
 
-      # AsciidocファイルをHTMLに変換
+      # source配下のすべての.adocファイルをHTMLに変換
+      # source内のすべての.adocを同じフォルダ構造でbuildに出力
       - name: Build AsciiDoc (resolve includes)
         run: |
-          mkdir -p build                   # 出力用ディレクトリを作成
-          asciidoctor -D build source/index.adoc  # source/index.adoc を build/ に変換
+          mkdir -p build
+          find source -name "*.adoc" -exec asciidoctor -D build {} \;
 
       # GitHub Pagesへデプロイ（gh-pagesブランチにHTMLをpush）
       - name: Deploy to GitHub Pages
