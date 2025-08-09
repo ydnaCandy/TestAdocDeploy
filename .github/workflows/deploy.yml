@@ -25,8 +25,12 @@ jobs:
       - name: Install Asciidoctor
         run: gem install asciidoctor
 
+      # シェルスクリプトに実行権限を付与
+      - name: Make build script executable
+        run: chmod +x buildScripts/build_adoc.sh
+
       # AsciidocファイルをHTMLに変換（静的ファイルもコピー）
-      # build_adoc.sh 内で以下を実行：
+      # build_docs.sh 内で以下を実行：
       - name: Build AsciiDoc and static files
         run: buildScripts/build_adoc.sh
 
@@ -38,4 +42,3 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           # 公開するディレクトリ（HTML出力先）
           publish_dir: ./build
-
