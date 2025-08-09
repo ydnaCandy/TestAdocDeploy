@@ -1,0 +1,20 @@
+services:
+  db:
+    container_name: postgres_pleasanter
+    image: postgres:16
+    ports:
+      - "25432:5432"
+    environment:
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
+      - POSTGRES_HOST_AUTH_METHOD
+      - POSTGRES_INITDB_ARGS
+    volumes:
+      - .pg_data:/var/lib/postgresql/data
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"       # 1ファイルの最大サイズ
+        max-file: "3"         # 保持するログファイルの最大数
+    restart: always

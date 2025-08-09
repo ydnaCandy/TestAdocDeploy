@@ -1,0 +1,158 @@
+:toc:
+
+= PleasanterをUbuntu上にDockerを使って構築する手順
+
+== 環境
+
+=== 実行環境
+
+ハードウェア:: Raspberry Pi 4
+OS:: Ubuntu 24.04 LTS
+
+=== 前提条件
+
+* Dockerがインストールされていること
+
+== 手順
+
+=== PleasanterとPostgreSQLを同じ端末上に構築する
+
+. ホームディレクトリにコンテナ用のディレクトリを作成する
+
++
+[source, bash]
+----
+# ディレクトリを作成
+$ mkdir -p ~/docker/pleasanter
+
+# ディレクトリ移動
+$ cd ~/docker/pleasanter
+----
+
+
+. 環境変数を定義する `.env` ファイルを作成する
+
++
+[source, bash]
+----
+# 環境変数を定義するためのファイルを作成
+$ nano .env
+----
+
++
+[source, bash]
+----
+include::./.env[]
+----
+
+. コンテナを起動するために`compose.yml`を作成する
++
+[source, bash]
+----
+# コンテナの定義情報を記載するファイルを作成
+$ nano compose.yml
+----
+
++
+[source, yml]
+----
+include::./compose.yml[]
+----
+
+
+. codedefinerを実行する
+
++
+[source, bash]
+----
+# オプションを指定して日本環境で実行する
+$ docker compose run --rm codedefiner _rds /l "ja" /z "Asia/Tokyo"
+
+# 下記が表示されるので[y]を入力
+# Type y (yes) if the license is correct, otherwise type n (no).
+----
+
+. pleasanterを起動する
+
++
+[source, bash]
+----
+# バックグラウンドで実行
+$ docker compose up -d pleasanter
+----
+
+. `http://[IP_address_by_host]:13500/` にアクセスしてログイン画面が表示されることを確認
+
+
+=== PleasanterとPostgresを別端末で起動する手順
+
+
+. DB側の端末にpostgres用の.envファイルを作成する
+
++
+[source, conf]
+----
+include::./pg.env[]
+----
+
+
+. postgres用のcompose.ymlを作成
++
+[source, yaml]
+----
+include::./postgres_compose.yml[]
+----
+
+. postgresを起動
++
+[source, bash]
+----
+$ docker compose up -d
+----
+
+
+. pleasanter側の端末に.envファイルを作成
++
+[source, conf]
+----
+include::./pleasanter.env[]
+----
+
+. pleasanterのcomposeファイルを作成
++
+[source, yaml]
+----
+include::./plea_compose.yml[]
+----
+
+. codedefinerを実行する
+
++
+[source, bash]
+----
+# オプションを指定して日本環境で実行する
+$ docker compose run --rm codedefiner _rds /l "ja" /z "Asia/Tokyo"
+
+# 下記が表示されるので[y]を入力
+# Type y (yes) if the license is correct, otherwise type n (no).
+----
+
+. pleasanterを起動する
+
++
+[source, bash]
+----
+# バックグラウンドで実行
+$ docker compose up -d pleasanter
+----
+
+. `http://[IP_address_by_host]:13500/` にアクセスしてログイン画面が表示されることを確認
+
+
+
+
+== 参考
+* 公式のDocker Hub
+    ** https://hub.docker.com/r/implem/pleasanter
+
+

@@ -1,0 +1,72 @@
+services:
+  db:
+    container_name: postgres
+    image: postgres:15
+    ports:
+      - "15432:5432"
+    environment:
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
+      - POSTGRES_HOST_AUTH_METHOD
+      - POSTGRES_INITDB_ARGS
+    restart: always
+    volumes:
+      - /var/dockervol/psql/data:/var/lib/postgresql/data
+    networks:
+      pleasanter_net:
+        ipv4_address: 192.16.5.2
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"       # 1ファイルの最大サイズ
+        max-file: "3"         # 保持するログファイルの最大数
+
+
+  pleasanter:
+    container_name: pleasanter
+    image: implem/pleasanter
+    depends_on:
+      - db
+    ports:
+      - "13500:8080"
+    environment:
+      Implem.Pleasanter_Rds_PostgreSQL_SaConnectionString: ${Implem_Pleasanter_Rds_PostgreSQL_SaConnectionString}
+      Implem.Pleasanter_Rds_PostgreSQL_OwnerConnectionString: ${Implem_Pleasanter_Rds_PostgreSQL_OwnerConnectionString}
+      Implem.Pleasanter_Rds_PostgreSQL_UserConnectionString: ${Implem_Pleasanter_Rds_PostgreSQL_UserConnectionString}
+    restart: always
+    networks:
+      pleasanter_net:
+        ipv4_address: 192.16.5.3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
+
+
+  codedefiner:
+    container_name: codedefiner
+    image: implem/pleasanter:codedefiner
+    depends_on:
+      - db
+    environment:
+      Implem.Pleasanter_Rds_PostgreSQL_SaConnectionString: ${Implem_Pleasanter_Rds_PostgreSQL_SaConnectionString}
+      Implem.Pleasanter_Rds_PostgreSQL_OwnerConnectionString: ${Implem_Pleasanter_Rds_PostgreSQL_OwnerConnectionString}
+      Implem.Pleasanter_Rds_PostgreSQL_UserConnectionString: ${Implem_Pleasanter_Rds_PostgreSQL_UserConnectionString}
+    networks:
+      pleasanter_net:
+        ipv4_address: 192.16.5.4
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
+
+networks:
+  pleasanter_net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.16.5.0/24
