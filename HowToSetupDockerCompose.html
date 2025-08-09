@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 2.0.23">
-<title>サンプルドキュメント</title>
+<title>PleasanterをUbuntu上にDockerを使って構築する手順</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <style>
 /*! Asciidoctor default stylesheet | MIT License | https://asciidoctor.org */
@@ -434,25 +434,354 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 @media amzn-kf8{#header,#content,#footnotes,#footer{padding:0}}
 </style>
 </head>
-<body class="article toc2 toc-left">
+<body class="article">
 <div id="header">
-<h1>サンプルドキュメント</h1>
-<div id="toc" class="toc2">
+<h1>PleasanterをUbuntu上にDockerを使って構築する手順</h1>
+<div id="toc" class="toc">
 <div id="toctitle">Table of Contents</div>
 <ul class="sectlevel1">
-<li><a href="#_はじめに">はじめに</a></li>
+<li><a href="#_環境">環境</a>
+<ul class="sectlevel2">
+<li><a href="#_実行環境">実行環境</a></li>
+<li><a href="#_前提条件">前提条件</a></li>
+</ul>
+</li>
+<li><a href="#_手順">手順</a>
+<ul class="sectlevel2">
+<li><a href="#_pleasanterとpostgresqlを同じ端末上に構築する">PleasanterとPostgreSQLを同じ端末上に構築する</a></li>
+<li><a href="#_pleasanterとpostgresを別端末で起動する手順">PleasanterとPostgresを別端末で起動する手順</a></li>
+</ul>
+</li>
+<li><a href="#_参考">参考</a></li>
 </ul>
 </div>
 </div>
 <div id="content">
 <div class="sect1">
-<h2 id="_はじめに">はじめに</h2>
+<h2 id="_環境">環境</h2>
 <div class="sectionbody">
-<div class="paragraph">
-<p>これはインクルードされた内容です。</p>
+<div class="sect2">
+<h3 id="_実行環境">実行環境</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">ハードウェア</dt>
+<dd>
+<p>Raspberry Pi 4</p>
+</dd>
+<dt class="hdlist1">OS</dt>
+<dd>
+<p>Ubuntu 24.04 LTS</p>
+</dd>
+</dl>
 </div>
-<div class="paragraph">
-<p><a href="Pleasanter/setup/HowToSetupDockerCompose.adoc">リンク</a></p>
+</div>
+<div class="sect2">
+<h3 id="_前提条件">前提条件</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Dockerがインストールされていること</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_手順">手順</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_pleasanterとpostgresqlを同じ端末上に構築する">PleasanterとPostgreSQLを同じ端末上に構築する</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>ホームディレクトリにコンテナ用のディレクトリを作成する</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-bash" data-lang="bash"># ディレクトリを作成
+$ mkdir -p ~/docker/pleasanter
+
+# ディレクトリ移動
+$ cd ~/docker/pleasanter</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>環境変数を定義する <code>.env</code> ファイルを作成する</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-bash" data-lang="bash"># 環境変数を定義するためのファイルを作成
+$ nano .env</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-bash" data-lang="bash">POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=postgres
+POSTGRES_HOST_AUTH_METHOD=scram-sha-256
+POSTGRES_INITDB_ARGS="--auth-host=scram-sha-256"
+Implem_Pleasanter_Rds_PostgreSQL_SaConnectionString='Server=db;Database=postgres;UID=postgres;PWD=postgres'
+Implem_Pleasanter_Rds_PostgreSQL_OwnerConnectionString='Server=db;Database=#ServiceName#;UID=#ServiceName#_Owner;PWD=postgres'
+Implem_Pleasanter_Rds_PostgreSQL_UserConnectionString='Server=db;Database=#ServiceName#;UID=#ServiceName#_User;PWD=postgres'</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>コンテナを起動するために`compose.yml`を作成する</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-bash" data-lang="bash"># コンテナの定義情報を記載するファイルを作成
+$ nano compose.yml</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-yml" data-lang="yml">services:
+  db:
+    container_name: postgres
+    image: postgres:15
+    ports:
+      - "15432:5432"
+    environment:
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
+      - POSTGRES_HOST_AUTH_METHOD
+      - POSTGRES_INITDB_ARGS
+    restart: always
+    volumes:
+      - /var/dockervol/psql/data:/var/lib/postgresql/data
+    networks:
+      pleasanter_net:
+        ipv4_address: 192.16.5.2
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"       # 1ファイルの最大サイズ
+        max-file: "3"         # 保持するログファイルの最大数
+
+
+  pleasanter:
+    container_name: pleasanter
+    image: implem/pleasanter
+    depends_on:
+      - db
+    ports:
+      - "13500:8080"
+    environment:
+      Implem.Pleasanter_Rds_PostgreSQL_SaConnectionString: ${Implem_Pleasanter_Rds_PostgreSQL_SaConnectionString}
+      Implem.Pleasanter_Rds_PostgreSQL_OwnerConnectionString: ${Implem_Pleasanter_Rds_PostgreSQL_OwnerConnectionString}
+      Implem.Pleasanter_Rds_PostgreSQL_UserConnectionString: ${Implem_Pleasanter_Rds_PostgreSQL_UserConnectionString}
+    restart: always
+    networks:
+      pleasanter_net:
+        ipv4_address: 192.16.5.3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
+
+
+  codedefiner:
+    container_name: codedefiner
+    image: implem/pleasanter:codedefiner
+    depends_on:
+      - db
+    environment:
+      Implem.Pleasanter_Rds_PostgreSQL_SaConnectionString: ${Implem_Pleasanter_Rds_PostgreSQL_SaConnectionString}
+      Implem.Pleasanter_Rds_PostgreSQL_OwnerConnectionString: ${Implem_Pleasanter_Rds_PostgreSQL_OwnerConnectionString}
+      Implem.Pleasanter_Rds_PostgreSQL_UserConnectionString: ${Implem_Pleasanter_Rds_PostgreSQL_UserConnectionString}
+    networks:
+      pleasanter_net:
+        ipv4_address: 192.16.5.4
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
+
+networks:
+  pleasanter_net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.16.5.0/24</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>codedefinerを実行する</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-bash" data-lang="bash"># オプションを指定して日本環境で実行する
+$ docker compose run --rm codedefiner _rds /l "ja" /z "Asia/Tokyo"
+
+# 下記が表示されるので[y]を入力
+# Type y (yes) if the license is correct, otherwise type n (no).</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>pleasanterを起動する</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-bash" data-lang="bash"># バックグラウンドで実行
+$ docker compose up -d pleasanter</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p><code>http://[IP_address_by_host]:13500/</code> にアクセスしてログイン画面が表示されることを確認</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_pleasanterとpostgresを別端末で起動する手順">PleasanterとPostgresを別端末で起動する手順</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>DB側の端末にpostgres用の.envファイルを作成する</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-conf" data-lang="conf">POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=postgres
+POSTGRES_HOST_AUTH_METHOD=scram-sha-256
+POSTGRES_INITDB_ARGS="--auth-host=scram-sha-256"</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>postgres用のcompose.ymlを作成</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-yaml" data-lang="yaml">services:
+  db:
+    container_name: postgres_pleasanter
+    image: postgres:16
+    ports:
+      - "25432:5432"
+    environment:
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
+      - POSTGRES_HOST_AUTH_METHOD
+      - POSTGRES_INITDB_ARGS
+    volumes:
+      - .pg_data:/var/lib/postgresql/data
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"       # 1ファイルの最大サイズ
+        max-file: "3"         # 保持するログファイルの最大数
+    restart: always</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>postgresを起動</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-bash" data-lang="bash">$ docker compose up -d</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>pleasanter側の端末に.envファイルを作成</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-conf" data-lang="conf">Implem_Pleasanter_Rds_PostgreSQL_SaConnectionString='Server=192.168.3.100:25432;Database=postgres;UID=postgres;PWD=postgres'
+Implem_Pleasanter_Rds_PostgreSQL_OwnerConnectionString='Server=192.168.3.100:25432;Database=#ServiceName#;UID=#ServiceName#_Owner;PWD=postgres'
+Implem_Pleasanter_Rds_PostgreSQL_UserConnectionString='Server=192.168.3.100:25432;Database=#ServiceName#;UID=#ServiceName#_User;PWD=postgres'</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>pleasanterのcomposeファイルを作成</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-yaml" data-lang="yaml">services:
+  pleasanter:
+    container_name: pleasanter_pg
+    image: implem/pleasanter:1.4.14.0
+    ports:
+      - "23500:8080"
+    environment:
+      Implem.Pleasanter_Rds_PostgreSQL_SaConnectionString: ${Implem_Pleasanter_Rds_PostgreSQL_SaConnectionString}
+      Implem.Pleasanter_Rds_PostgreSQL_OwnerConnectionString: ${Implem_Pleasanter_Rds_PostgreSQL_OwnerConnectionString}
+      Implem.Pleasanter_Rds_PostgreSQL_UserConnectionString: ${Implem_Pleasanter_Rds_PostgreSQL_UserConnectionString}
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
+
+
+  codedefiner:
+    container_name: codedefiner
+    image: implem/pleasanter:codedefiner
+    environment:
+      Implem.Pleasanter_Rds_PostgreSQL_SaConnectionString: ${Implem_Pleasanter_Rds_PostgreSQL_SaConnectionString}
+      Implem.Pleasanter_Rds_PostgreSQL_OwnerConnectionString: ${Implem_Pleasanter_Rds_PostgreSQL_OwnerConnectionString}
+      Implem.Pleasanter_Rds_PostgreSQL_UserConnectionString: ${Implem_Pleasanter_Rds_PostgreSQL_UserConnectionString}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>codedefinerを実行する</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-bash" data-lang="bash"># オプションを指定して日本環境で実行する
+$ docker compose run --rm codedefiner _rds /l "ja" /z "Asia/Tokyo"
+
+# 下記が表示されるので[y]を入力
+# Type y (yes) if the license is correct, otherwise type n (no).</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>pleasanterを起動する</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-bash" data-lang="bash"># バックグラウンドで実行
+$ docker compose up -d pleasanter</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p><code>http://[IP_address_by_host]:13500/</code> にアクセスしてログイン画面が表示されることを確認</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_参考">参考</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>公式のDocker Hub</p>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://hub.docker.com/r/implem/pleasanter" class="bare">https://hub.docker.com/r/implem/pleasanter</a></p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
 </div>
 </div>
 </div>
