@@ -7,4 +7,4 @@ include::_partial/intro.adoc[]
 
 
 
-link:./Pleasanter/setup/HowToSetupDockerCompose.adoc[リンク]
+link:Pleasanter/setup/HowToSetupDockerCompose.adoc[リンク]
