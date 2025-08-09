@@ -2,8 +2,8 @@ name: Build and Deploy AsciiDoc
 
 on:
   push:
-    # 起動ブランチ
-    branches: [main]  
+    # このワークフローを起動するブランチ
+    branches: [main]
 
 jobs:
   build-and-deploy:
@@ -25,12 +25,10 @@ jobs:
       - name: Install Asciidoctor
         run: gem install asciidoctor
 
-      # source配下のすべての.adocファイルをHTMLに変換
-      # source内のすべての.adocを同じフォルダ構造でbuildに出力
-      - name: Build AsciiDoc (resolve includes)
-        run: |
-          mkdir -p build
-          find source -name "*.adoc" -exec asciidoctor -D build {} \;
+      # AsciidocファイルをHTMLに変換（静的ファイルもコピー）
+      # build_adoc.sh 内で以下を実行：
+      - name: Build AsciiDoc and static files
+        run: buildScripts/build_adoc.sh
 
       # GitHub Pagesへデプロイ（gh-pagesブランチにHTMLをpush）
       - name: Deploy to GitHub Pages
@@ -40,3 +38,4 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           # 公開するディレクトリ（HTML出力先）
           publish_dir: ./build
+
